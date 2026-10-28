@@ -1,0 +1,11 @@
+# Published paper PDFs are not redistributed here - see README for links.
+Octo.pdf
+OpenVLA.pdf
+
+# Official project-page demo clips (OpenVLA/Octo) - local viewing only, not ours to redistribute.
+demo-videos/
+
+# Jupyter / Python
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
