@@ -498,3 +498,72 @@ consistent with each other too).
 - [ ] Rehearse the live demo at least once on the actual presentation-day setup (not just your
       dev machine) to catch environment surprises (Colab session expiry, missing deps, etc.)
       with time to fix them.
+
+## 7. Bug (2026-10-30): visualize_action's arrow was invisible on real Colab runs
+
+User ran both the full `TEST_PAIRS` cell and the "try it yourself" cell on Colab
+(screenshots: yellow reference dot visible, but genuinely **no red arrow at all** —
+confirmed, not just subtle) and separately flagged that pair 1 and pair 4 use the same
+instruction ("pick up the spatula") with no visible explanation why.
+
+- [x] **Root cause of the missing arrow: the `ARROW_SCALE=1500` fix from 2026-10-28 was
+      still mathematically too small for real photo resolutions.** `ARROW_SCALE` was
+      tuned assuming the figure's rendered pixels roughly equal the image's own pixel
+      grid, but OpenVLA's test images are 640×480 while the figure only renders at
+      ~400×400 (`figsize=(4,4)` @ 100dpi) — matplotlib downscales by roughly 0.6-0.8x on
+      top of an already-tiny `delta * 1500` (often just 6-9 data-pixels for typical
+      deltas like `x=0.004`), landing well under 1 screen pixel. Confirmed by rendering
+      the exact delta values from the user's own screenshot locally
+      (`/tmp/viz_test.png` during debugging) — invisible at the old scale, clearly
+      visible after the fix below.
+      **Fixed properly, both notebooks:** `visualize_action` no longer scales the raw
+      delta by a flat constant at all. It now normalizes the (x, y) delta to a unit
+      direction vector and draws a **fixed-length arrow** sized as a percentage of the
+      image's own dimensions (`0.22 * min(w, h)`) — resolution-independent, so it reads
+      the same whether the photo is 640×480 or a 4000px phone photo. Only direction is
+      meaningful; length no longer claims to represent magnitude (it never did, but this
+      removes any ambiguity). The reference-point dot also got an explicit on-image text
+      label ("reference point (not a detected target)") instead of relying only on the
+      separate markdown cell, since the user's "the yellow reference is not pointing to
+      the exact point" reaction showed the markdown-only explanation wasn't enough —
+      people look at the image first, not the cell above it.
+- [x] **Explained: the duplicate "pick up the spatula" instruction (pairs 1 and 4) is
+      deliberate, not a mistake** — pair 4 is the scene-robustness test, using the exact
+      same instruction as pair 1's baseline but in `pair4_cluttered.jpg`'s busier scene,
+      to check whether clutter alone breaks a prediction that worked cleanly in a clean
+      scene (mirrors the Octo paper's own Small-vs-Base robustness ablation). This was
+      already documented in `test_images/README.md` and the demo-results slide, but
+      wasn't visible from inside the notebook itself while running it live.
+      **Fixed, both notebooks:** `TEST_PAIRS` entries now carry a third element — a short
+      "what it tests" string — printed inline with the instruction
+      (`=== Instruction: 'pick up the spatula'  —  scene robustness: SAME instruction as
+      pair 1, a cluttered scene instead ===`), so the reason for the repeat is obvious
+      without cross-referencing `TASKS.md` or the README mid-demo.
+- [ ] **Still to do:** re-run both notebooks on Colab to confirm the arrow is now visible
+      and the TEST_PAIRS labels print correctly, before the next practice run.
+- [x] **Cleanup (2026-10-30): removed presenter-only language from the notebooks'
+      markdown and prints.** User feedback: notebooks are shared with the professor and
+      classmates, not just the presenters, and a few things only made sense to someone
+      who already knew the internal project context:
+      - `print("(If True: see the known-issue note above this cell before using these
+        for the talk.)")` in `OpenVLA_Demo.ipynb` — addressed "the talk" directly, no
+        value to a student. Replaced with a conditional, generically-worded message that
+        only prints if something's actually wrong.
+      - Markdown cross-references like "Same fixed test set as `Octo_Demo.ipynb` Section
+        6" and "see the note in Section 4" — numbered-section references across (and
+        within) notebooks that force the reader to go hunting, and "(for the slide
+        deck)" headers — presenter framing with no meaning to someone just running the
+        cell. Reworded throughout both notebooks to describe what the cell does/means
+        directly instead of pointing elsewhere by number.
+      - A leftover dead comment (`# TEST_PAIRS = [("my_photos/test1.jpg", ...)]`) in
+        `OpenVLA_Demo.ipynb` — an old template line with no purpose once `TEST_PAIRS` was
+        filled in for real. Removed.
+- [x] **Reformalized every markdown cell in both notebooks (2026-10-30), stricter pass.**
+      User clarified the actual ask: markdown should be formal and state only what the
+      following code cell does — not a "mixed document" combining that with rationale,
+      debugging history, or caveats. Rewrote every markdown cell down to one short,
+      declarative paragraph per cell (what it does, and any value the user must set,
+      e.g. runtime version / `USE_4BIT`), with all "why this version/why this bug"
+      explanations removed from the notebooks entirely. That detailed rationale still
+      lives in full in this file — `TASKS.md` is now unambiguously the only place for it,
+      the notebooks are purely operational documentation.
