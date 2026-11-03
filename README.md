@@ -6,6 +6,23 @@ prepared for a Master's-level Machine Learning and Deep Learning course (Module 
 **OpenVLA** — including their architectures, reported results, and a working demo that
 lets anyone run both models on a free Colab GPU.
 
+## What is a VLA model?
+
+A Vision-Language-Action model is a single neural network that takes a camera image and
+a natural-language instruction as input and outputs a robot action directly — replacing
+the classic separate perception → planning → control pipeline with one end-to-end
+forward pass.
+
+## Models at a glance
+
+| | OpenVLA | Octo |
+|---|---|---|
+| Parameters | 7B | 27M (Small) / 93M (Base) |
+| Backbone | Llama-2, fused with DINOv2/SigLIP visual encoders | Transformer (ViT-S/ViT-B sized) with a diffusion action head |
+| Action output | Discretized action tokens, decoded autoregressively | Continuous actions, predicted as a chunk via diffusion |
+| Pretraining data | 970k Open X-Embodiment trajectories | ~800k-episode curated subset of 25 Open X-Embodiment datasets |
+| Inference hardware | GPU (reported: 15GB VRAM, ~6Hz on a single RTX 4090) | Runs on CPU — checkpoints are small enough to be fast without a GPU |
+
 ## Papers covered
 
 - **OpenVLA: An Open-Source Vision-Language-Action Model**
@@ -47,3 +64,20 @@ the Colab runtime.
 The pre-loaded comparison cells (`TEST_PAIRS`) read images from each presenter's own
 Google Drive cache and are mainly for reproducing the slide-deck results; the
 upload-your-own-photo cell has no such dependency.
+
+## What the demo tests
+
+Both notebooks run the same four fixed (image, instruction) pairs from the public
+[BridgeData V2](https://rail-berkeley.github.io/bridgedata/) dataset through all three
+pretrained checkpoints — OpenVLA, Octo-Small, Octo-Base — with no fine-tuning:
+
+| Pair | Instruction | Scene | What it tests |
+|---|---|---|---|
+| 1 | "pick up the spatula" | Clean | Baseline: one clear, unambiguous target |
+| 2 | "pick up the spoon, not the pot" | Pot, spoon, cans | Distractor / language grounding |
+| 3 | "pick up the fruit" | Fruit- and animal-shaped toys | Semantic generalization (category, not literal name) |
+| 4 | "pick up the spatula" | Same instruction as pair 1, cluttered scene | Scene robustness: Octo-Small vs Octo-Base |
+
+Each model outputs a single-step, 7-DoF control delta (x, y, z, yaw, pitch, roll, grasp)
+per image — not an object label — since both models are designed as closed-loop
+controllers re-evaluated on every new camera frame, not single-shot classifiers.
