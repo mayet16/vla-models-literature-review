@@ -25,12 +25,12 @@ sources.
 
 | Path | Contents |
 |---|---|
-| `VLA-Topic-Notes.tex` / `.pdf` | Presentation notes: what a VLA model is, architecture comparison, reported benchmarks, and the assigned subtopics (RT-2, OpenVLA, Octo, π₀, generalist robot policies, vision-language-conditioned control). |
 | `Octo_Demo.ipynb` | Colab notebook: loads Octo-Small and Octo-Base (JAX), runs inference on an image + instruction, visualizes the predicted action. |
 | `OpenVLA_Demo.ipynb` | Colab notebook: loads `openvla/openvla-7b` (PyTorch), same inference + visualization flow. Kept in a separate notebook/runtime from Octo so the two frameworks don't compete for GPU memory. |
 | `test_images/` | Fixed set of real [BridgeData V2](https://rail-berkeley.github.io/bridgedata/) frames used as a controlled comparison set across both models, plus extra sample images for anyone trying the notebooks without a photo of their own. See `test_images/README.md`. |
-| `TASKS.md` | Working project log: environment setup, every bug hit while getting both notebooks running on current Colab images, and remaining presentation prep. Informal by design — the notebooks themselves are the cleaned-up, presentation-ready version. |
-| `VLA-Slides.pptx` | The presentation deck: lineage framing, architecture comparison, real-robot evaluation, benchmark highlights, a note on reading VLA literature critically, and the demo results. |
+
+The presentation notes, slide deck, formal report, and working task log are kept outside
+this repository and are not shared here.
 
 ## Running the demos
 

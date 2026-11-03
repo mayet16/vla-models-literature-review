@@ -5,6 +5,14 @@ OpenVLA.pdf
 # Official project-page demo clips (OpenVLA/Octo) - local viewing only, not ours to redistribute.
 demo-videos/
 
+# Working docs (task log, slides, notes, report) - kept outside the repo, not shared here.
+TASKS.md
+VLA-Slides.pptx
+VLA-Topic-Notes.tex
+VLA-Topic-Notes.pdf
+REPORT.md
+REPORT.pdf
+
 # Jupyter / Python
 .ipynb_checkpoints/
 __pycache__/
