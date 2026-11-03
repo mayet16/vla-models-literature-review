@@ -81,3 +81,46 @@ pretrained checkpoints — OpenVLA, Octo-Small, Octo-Base — with no fine-tunin
 Each model outputs a single-step, 7-DoF control delta (x, y, z, yaw, pitch, roll, grasp)
 per image — not an object label — since both models are designed as closed-loop
 controllers re-evaluated on every new camera frame, not single-shot classifiers.
+
+## Understanding the output: the 7-DoF action vector
+
+Every prediction is the same 7-number vector, in this fixed order, representing a
+**change** for the next control step — not an absolute position and not an object
+location:
+
+| # | Dim | Meaning | Units |
+|---|---|---|---|
+| 1 | `x` | End-effector movement, left(−)/right(+) | meters |
+| 2 | `y` | End-effector movement, back(−)/forward(+) | meters |
+| 3 | `z` | End-effector movement, down(−)/up(+) | meters |
+| 4 | `yaw` | Wrist rotation about the vertical axis | radians |
+| 5 | `pitch` | Wrist rotation, tilting up/down | radians |
+| 6 | `roll` | Wrist rotation, twisting about the gripper's own axis | radians |
+| 7 | `grasp` | Gripper command (≈0 = closed, ≈1 = open) | unitless |
+
+All values are tiny (millimeter/sub-radian scale) because each one is a single step of
+a loop meant to run continuously at a few Hz, not a full motion to the target in one
+shot — the model is re-queried on a fresh camera frame after every step. Only `x`/`y`
+are drawn as the red arrow in the visualization (they're the two axes that lie in the
+image plane); `z`, `yaw`, `pitch`, `roll`, and `grasp` are only shown in the printed
+values below each image.
+
+### Our results
+
+Four fixed (image, instruction) pairs (see above), predicted first-step action for
+each model — pretrained checkpoints only, no fine-tuning:
+
+| Pair | Instruction | OpenVLA | Octo-Small | Octo-Base |
+|---|---|---|---|---|
+| 1 | "pick up the spatula" | x=0.004, y=−0.005, z=0.008, grasp=0.996 | x=0.004, y=−0.010, z=0.018, grasp=0.995 | x=0.004, y=−0.001, z=0.004, grasp=0.992 |
+| 2 | "pick up the spoon, not the pot" | x=−0.0, y=−0.0, z=−0.001, grasp=0.996 | x=0.005, y=−0.022, z=0.018, grasp=0.998 | x=0.005, y=−0.021, z=0.016, grasp=0.993 |
+| 3 | "pick up the fruit" | x=0.0, y=−0.002, z=0.0, grasp=0.996 | x=0.004, y=−0.000, z=0.009, grasp=0.996 | x=0.003, y=−0.002, z=0.003, grasp=0.990 |
+| 4 | "pick up the spatula" (cluttered) | x=0.0, y=0.0, z=−0.003, grasp=0.996 | x=0.001, y=−0.000, z=−0.000, grasp=0.995 | x=0.002, y=−0.001, z=0.002, grasp=1.004 |
+
+(`yaw`/`pitch`/`roll` are recorded in each notebook's own output cells; omitted here
+for brevity.) What these confirm: predictions are reproducible, non-degenerate, and
+genuinely different per instruction/image/model — evidence the pipeline runs a fresh
+forward pass each time rather than returning a cached result. What they do **not**
+confirm: whether the model identified the correct object — a single still-frame
+prediction is only the first step of a closed loop, and that question needs an actual
+multi-step rollout (real or simulated robot), which is outside the scope of this demo.
